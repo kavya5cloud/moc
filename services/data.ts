@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import {
   Collectable,
   ShopOrder,
@@ -17,25 +17,28 @@ import {
 } from '../constants';
 
 /**
- * MOCA HYBRID DATA ENGINE (v7.1)
- * Server: Supabase Cloud (Postgres)
- * Mirror: Browser LocalStorage (Offline + Persistence)
+ * MOCA HYBRID DATA ENGINE (FINAL)
+ * Server: Supabase Cloud
+ * Mirror: Browser LocalStorage
  */
 
 /* ================================
-   ENV (VITE ONLY)
+   ENV
 ================================ */
 const SUPABASE_URL = 'https://wfympkifjwdinxpiagbw.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debug once (remove after verification)
-console.log('[MOCA] Supabase URL:', SUPABASE_URL);
+if (!SUPABASE_ANON_KEY) {
+  console.warn('[MOCA] Supabase ANON key missing – Local Mirror fallback');
+} else {
+  console.log('[MOCA] Supabase env detected – LIVE CLOUD');
+}
 
 /* ================================
-   SUPABASE CLIENT
+   SUPABASE CLIENT (AUTHORITATIVE)
 ================================ */
-export const supabase =
-  SUPABASE_URL && SUPABASE_ANON_KEY
+export const supabase: SupabaseClient | null =
+  SUPABASE_ANON_KEY
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
@@ -69,12 +72,12 @@ const setLocal = (key: string, data: any) => {
 };
 
 /* ================================
-   CONNECTION STATUS
+   CONNECTION STATUS (USED BY UI)
 ================================ */
 export const checkDatabaseConnection = () => ({
   isConnected: !!supabase,
   mode: supabase ? 'LIVE CLOUD' : 'LOCAL MIRROR',
-  url: SUPABASE_URL ?? 'NOT_CONFIGURED',
+  url: supabase ? SUPABASE_URL : 'NOT_CONFIGURED',
   timestamp: Date.now(),
 });
 
@@ -82,18 +85,17 @@ export const checkDatabaseConnection = () => ({
    INITIAL BOOTSTRAP
 ================================ */
 export const bootstrapMuseumData = async () => {
-  if (!localStorage.getItem(STORAGE_KEYS.COLLECTABLES)) {
+  if (!localStorage.getItem(STORAGE_KEYS.COLLECTABLES))
     setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES);
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.EXHIBITIONS)) {
+
+  if (!localStorage.getItem(STORAGE_KEYS.EXHIBITIONS))
     setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS);
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ARTWORKS)) {
+
+  if (!localStorage.getItem(STORAGE_KEYS.ARTWORKS))
     setLocal(STORAGE_KEYS.ARTWORKS, ARTWORKS);
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.PAGE_ASSETS)) {
+
+  if (!localStorage.getItem(STORAGE_KEYS.PAGE_ASSETS))
     setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
-  }
 };
 
 /* ================================
@@ -105,16 +107,12 @@ const syncGet = async <T>(
   fallback: T
 ): Promise<T> => {
   if (supabase) {
-    try {
-      const { data, error } = await supabase.from(table).select('*');
-      if (data && data.length) {
-        setLocal(storageKey, data);
-        return data as T;
-      }
-      if (error) console.warn(`[DB READ] ${table}`, error);
-    } catch (err) {
-      console.error(`[NETWORK READ] ${table}`, err);
+    const { data, error } = await supabase.from(table).select('*');
+    if (data) {
+      setLocal(storageKey, data);
+      return data as T;
     }
+    if (error) console.error(`[DB READ] ${table}`, error);
   }
   return getLocal(storageKey, fallback);
 };
@@ -123,23 +121,16 @@ const syncUpsert = async (
   table: string,
   storageKey: string,
   item: any,
-  idField: string = 'id'
+  idField = 'id'
 ) => {
   const list = getLocal<any[]>(storageKey, []);
   const index = list.findIndex((i) => i[idField] === item[idField]);
-
-  if (index > -1) list[index] = item;
-  else list.unshift(item);
-
+  index > -1 ? (list[index] = item) : list.unshift(item);
   setLocal(storageKey, list);
 
   if (supabase) {
-    try {
-      const { error } = await supabase.from(table).upsert(item);
-      if (error) console.error(`[DB WRITE] ${table}`, error);
-    } catch (err) {
-      console.error(`[NETWORK WRITE] ${table}`, err);
-    }
+    const { error } = await supabase.from(table).upsert(item);
+    if (error) console.error(`[DB WRITE] ${table}`, error);
   }
 };
 
@@ -148,16 +139,14 @@ const syncDelete = async (
   storageKey: string,
   id: string
 ) => {
-  const list = getLocal<any[]>(storageKey, []).filter((i) => i.id !== id);
-  setLocal(storageKey, list);
+  setLocal(
+    storageKey,
+    getLocal<any[]>(storageKey, []).filter((i) => i.id !== id)
+  );
 
   if (supabase) {
-    try {
-      const { error } = await supabase.from(table).delete().eq('id', id);
-      if (error) console.error(`[DB DELETE] ${table}`, error);
-    } catch (err) {
-      console.error(`[NETWORK DELETE] ${table}`, err);
-    }
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) console.error(`[DB DELETE] ${table}`, error);
   }
 };
 
@@ -165,31 +154,19 @@ const syncDelete = async (
    API
 ================================ */
 export const getExhibitions = () =>
-  syncGet<Exhibition[]>(
-    'exhibitions',
-    STORAGE_KEYS.EXHIBITIONS,
-    EXHIBITIONS
-  );
+  syncGet<Exhibition[]>('exhibitions', STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS);
 
 export const saveExhibition = (ex: Exhibition) =>
   syncUpsert('exhibitions', STORAGE_KEYS.EXHIBITIONS, ex);
 
 export const getArtworks = () =>
-  syncGet<Artwork[]>(
-    'artworks',
-    STORAGE_KEYS.ARTWORKS,
-    ARTWORKS
-  );
+  syncGet<Artwork[]>('artworks', STORAGE_KEYS.ARTWORKS, ARTWORKS);
 
 export const getCollectables = () =>
-  syncGet<Collectable[]>(
-    'collectables',
-    STORAGE_KEYS.COLLECTABLES,
-    COLLECTABLES
-  );
+  syncGet<Collectable[]>('collectables', STORAGE_KEYS.COLLECTABLES, COLLECTABLES);
 
-export const saveCollectable = (col: Collectable) =>
-  syncUpsert('collectables', STORAGE_KEYS.COLLECTABLES, col);
+export const saveCollectable = (c: Collectable) =>
+  syncUpsert('collectables', STORAGE_KEYS.COLLECTABLES, c);
 
 export const deleteCollectable = (id: string) =>
   syncDelete('collectables', STORAGE_KEYS.COLLECTABLES, id);
@@ -197,48 +174,17 @@ export const deleteCollectable = (id: string) =>
 export const getEvents = () =>
   syncGet<Event[]>('events', STORAGE_KEYS.EVENTS, []);
 
-export const getReviews = async (itemId: string): Promise<Review[]> => {
-  if (supabase) {
-    const { data } = await supabase
-      .from('reviews')
-      .select('*')
-      .eq('itemId', itemId)
-      .order('timestamp', { ascending: false });
-
-    if (data) return data as Review[];
-  }
-
-  const all = getLocal<Review[]>(STORAGE_KEYS.REVIEWS, []);
-  return all.filter((r) => r.itemId === itemId);
-};
-
-export const addReview = (review: Review) =>
-  syncUpsert('reviews', STORAGE_KEYS.REVIEWS, review);
-
 export const getBookings = () =>
   syncGet<Booking[]>('bookings', STORAGE_KEYS.BOOKINGS, []);
 
-export const saveBooking = (booking: Booking) =>
-  syncUpsert('bookings', STORAGE_KEYS.BOOKINGS, booking);
+export const saveBooking = (b: Booking) =>
+  syncUpsert('bookings', STORAGE_KEYS.BOOKINGS, b);
 
 export const getShopOrders = () =>
   syncGet<ShopOrder[]>('shop_orders', STORAGE_KEYS.ORDERS, []);
 
-export const saveShopOrder = (order: ShopOrder) =>
-  syncUpsert('shop_orders', STORAGE_KEYS.ORDERS, order);
-
-export const updateOrderStatus = async (
-  orderId: string,
-  status: 'Pending' | 'Fulfilled'
-) => {
-  const orders = await getShopOrders();
-  const order = orders.find((o) => o.id === orderId);
-
-  if (order) {
-    order.status = status;
-    await syncUpsert('shop_orders', STORAGE_KEYS.ORDERS, order);
-  }
-};
+export const saveShopOrder = (o: ShopOrder) =>
+  syncUpsert('shop_orders', STORAGE_KEYS.ORDERS, o);
 
 export const getDashboardAnalytics = async () => {
   const [orders, bookings] = await Promise.all([
@@ -246,29 +192,14 @@ export const getDashboardAnalytics = async () => {
     getBookings(),
   ]);
 
-  const shopRevenue = orders.reduce((s, o) => s + o.totalAmount, 0);
-  const ticketRevenue = bookings.reduce((s, b) => s + b.totalAmount, 0);
-  const totalTickets = bookings.reduce(
-    (s, b) =>
-      s + b.tickets.adult + b.tickets.student + b.tickets.child,
-    0
-  );
-
   return {
-    totalRevenue: shopRevenue + ticketRevenue,
-    shopRevenue,
-    ticketRevenue,
-    totalTickets,
+    totalRevenue:
+      orders.reduce((s, o) => s + o.totalAmount, 0) +
+      bookings.reduce((s, b) => s + b.totalAmount, 0),
     orderCount: orders.length,
     bookingCount: bookings.length,
-    recentActivity: [...orders, ...bookings]
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 10),
   };
 };
-
-export const getHomepageGallery = () =>
-  syncGet<any[]>('homepage_gallery', 'MOCA_GALLERY_SCROLL', []);
 
 export const getPageAssets = async (): Promise<PageAssets> =>
   getLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
@@ -278,5 +209,3 @@ export const savePageAssets = async (data: PageAssets) =>
 
 export const getStaffMode = async () =>
   localStorage.getItem('MOCA_STAFF_MODE') === 'true';
-
-
