@@ -25,7 +25,7 @@ import {
 /* ================================
    ENV (VITE ONLY)
 ================================ */
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_URL = 'https://wfympkifjwdinxpiagbw.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 // Debug once (remove after verification)
@@ -278,4 +278,5 @@ export const savePageAssets = async (data: PageAssets) =>
 
 export const getStaffMode = async () =>
   localStorage.getItem('MOCA_STAFF_MODE') === 'true';
+
 
