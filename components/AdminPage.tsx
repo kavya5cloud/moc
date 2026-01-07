@@ -5,7 +5,7 @@ import {
     Check, X, Database, Calendar, CreditCard, 
     TrendingUp, Package, Users, RefreshCw, ChevronRight,
     Tag, Activity, Globe, ShieldCheck, AlertCircle, Copy, Terminal,
-    Upload, Image as ImageIcon, Link as LinkIcon
+    Upload, Image as ImageIcon, Link as LinkIcon, Info, WifiOff
 } from 'lucide-react';
 import { 
     getCollectables, deleteCollectable, saveCollectable,
@@ -193,6 +193,27 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                </div>
            ) : (
                <div className="max-w-6xl mx-auto space-y-10">
+                   {/* Local Storage Warning Banner */}
+                   {!dbStatus?.isConnected && (
+                       <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
+                           <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
+                               <WifiOff className="w-6 h-6" />
+                           </div>
+                           <div className="flex-grow">
+                               <h4 className="text-sm font-black uppercase tracking-widest text-amber-900 mb-1">Local Mirror Mode Active</h4>
+                               <p className="text-xs text-amber-700 leading-relaxed mb-4">
+                                   Your changes are currently saved <b>only on this device</b>. To sync your products and orders to your phone or other staff members, you must connect a Supabase database.
+                               </p>
+                               <button 
+                                onClick={() => setActiveTab('system')}
+                                className="text-[10px] font-black uppercase tracking-widest bg-amber-600 text-white px-4 py-2 rounded-xl hover:bg-amber-700 transition-colors"
+                               >
+                                   Fix Connectivity
+                               </button>
+                           </div>
+                       </div>
+                   )}
+
                    {/* Header Row */}
                    <div className="flex justify-between items-end">
                        <div>
@@ -233,12 +254,12 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
 
                                     <div className="p-8 rounded-3xl border bg-gray-50 border-gray-100">
                                         <div className="flex items-center justify-between mb-6">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Local Cache</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Cross-Device Sync</span>
                                             <ShieldCheck className="text-blue-600 w-5 h-5" />
                                         </div>
                                         <div className="text-2xl font-black mb-2">HYBRID LINK</div>
                                         <p className="text-xs text-gray-500 leading-relaxed">
-                                            The app uses an offline-first architecture. If the Supabase server is unreachable, MOCA will serve data from its local cache and sync when back online.
+                                            To see updates on your phone, you must provide your Supabase keys. Once connected, your browser will upload its local data to the cloud automatically.
                                         </p>
                                     </div>
                                 </div>
