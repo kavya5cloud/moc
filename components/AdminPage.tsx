@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     Lock, LogOut, Trash, Plus, ShoppingBag, 
     Check, X, Database, Calendar, CreditCard, 
     TrendingUp, Package, Users, RefreshCw, ChevronRight,
-    Tag, Activity, Globe, ShieldCheck, AlertCircle, Copy, Terminal
+    Tag, Activity, Globe, ShieldCheck, AlertCircle, Copy, Terminal,
+    Upload, Image as ImageIcon, Link as LinkIcon
 } from 'lucide-react';
 import { 
     getCollectables, deleteCollectable, saveCollectable,
@@ -30,6 +31,7 @@ const AdminPage: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -78,6 +80,42 @@ const AdminPage: React.FC = () => {
       setEditItem(null);
       fetchAdminData();
       setIsSyncing(false);
+  };
+
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+        alert("Please upload an image file.");
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        setEditItem({ ...editItem, imageUrl: e.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+    }
+  }, [editItem]);
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+        handleFile(e.target.files[0]);
+    }
   };
 
   const sqlSchema = `-- Run this in your Supabase SQL Editor:
@@ -350,13 +388,66 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
 
        {/* Edit Modal */}
        {editItem && (
-           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-6">
-               <div className="bg-white max-w-lg w-full rounded-[2.5rem] p-12 animate-in zoom-in-95 duration-300">
+           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-6 overflow-y-auto">
+               <div className="bg-white max-w-lg w-full rounded-[2.5rem] p-10 md:p-12 animate-in zoom-in-95 duration-300 my-8">
                    <div className="flex justify-between items-center mb-10">
                        <h3 className="text-2xl font-black uppercase tracking-tighter">Product Setup</h3>
                        <button onClick={() => setEditItem(null)} className="p-2 hover:bg-gray-100 rounded-full"><X className="w-6 h-6" /></button>
                    </div>
-                   <form onSubmit={handleSaveProduct} className="space-y-6">
+                   <form onSubmit={handleSaveProduct} className="space-y-8">
+                       {/* Drag & Drop Area */}
+                       <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Product Image</label>
+                           <div 
+                               onDragOver={onDragOver}
+                               onDragLeave={onDragLeave}
+                               onDrop={onDrop}
+                               className={`
+                                   relative aspect-video rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center gap-4 overflow-hidden group
+                                   ${isDragging ? 'bg-black/5 border-black scale-[0.98]' : 'bg-gray-50 border-gray-200 hover:border-black/20'}
+                                   ${editItem.imageUrl ? 'border-solid' : ''}
+                               `}
+                           >
+                               {editItem.imageUrl ? (
+                                   <>
+                                       <img src={editItem.imageUrl} className="w-full h-full object-cover group-hover:opacity-50 transition-opacity" />
+                                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                           <button 
+                                               type="button"
+                                               onClick={() => setEditItem({...editItem, imageUrl: ''})}
+                                               className="bg-red-500 text-white p-3 rounded-full hover:scale-110 transition-transform shadow-lg"
+                                           >
+                                               <Trash className="w-5 h-5" />
+                                           </button>
+                                       </div>
+                                   </>
+                               ) : (
+                                   <div className="text-center p-6">
+                                       <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                           <Upload className={`w-5 h-5 transition-colors ${isDragging ? 'text-black' : 'text-gray-400'}`} />
+                                       </div>
+                                       <p className="text-[10px] font-black uppercase tracking-widest mb-1">Drop Image Here</p>
+                                       <p className="text-[9px] text-gray-400 mb-4">or click to browse your files</p>
+                                       <input 
+                                           type="file" 
+                                           accept="image/*" 
+                                           className="absolute inset-0 opacity-0 cursor-pointer" 
+                                           onChange={onFileChange}
+                                       />
+                                   </div>
+                               )}
+                           </div>
+                           <div className="flex items-center gap-2 mt-2 px-2">
+                               <LinkIcon className="w-3 h-3 text-gray-300" />
+                               <input 
+                                   className="flex-grow bg-transparent text-[10px] text-gray-400 outline-none font-mono"
+                                   placeholder="Or paste an image URL here..."
+                                   value={editItem.imageUrl.startsWith('data:') ? 'Base64 Encoded Image' : editItem.imageUrl}
+                                   onChange={e => setEditItem({...editItem, imageUrl: e.target.value})}
+                               />
+                           </div>
+                       </div>
+
                        <div className="grid grid-cols-2 gap-4">
                            <div className="col-span-2">
                                <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Product Name</label>
@@ -376,11 +467,8 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                                </select>
                            </div>
                        </div>
-                       <div>
-                           <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Image URL</label>
-                           <input required className="w-full border-2 border-gray-100 p-4 rounded-xl font-mono text-[10px]" value={editItem.imageUrl} onChange={e => setEditItem({...editItem, imageUrl: e.target.value})} />
-                       </div>
-                       <button type="submit" disabled={isSyncing} className="w-full bg-black text-white py-5 rounded-xl font-black uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3">
+                       
+                       <button type="submit" disabled={isSyncing} className="w-full bg-black text-white py-5 rounded-xl font-black uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 shadow-xl">
                            {isSyncing ? <RefreshCw className="animate-spin w-5 h-5" /> : <Check className="w-5 h-5" />} Save Product
                        </button>
                    </form>
