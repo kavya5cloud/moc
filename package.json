@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.33.0",
-    "@supabase/supabase-js": "^2.90.0",
+    "@supabase/supabase-js": "^2.39.7",
     "html2canvas": "1.4.1",
     "lucide-react": "^0.555.0",
     "react": "^19.2.0",
