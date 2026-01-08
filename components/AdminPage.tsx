@@ -32,15 +32,26 @@ const AdminPage: React.FC = () => {
   const [editItem, setEditItem] = useState<any>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  
+ const refreshDbStatus = useCallback(() => {
+  const status = checkDatabaseConnection();
+  setDbStatus(status);
+}, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-        fetchAdminData();
-        setDbStatus(checkDatabaseConnection());
-        const interval = setInterval(fetchAdminData, 60000); 
-        return () => clearInterval(interval);
-    }
-  }, [isAuthenticated]);
+useEffect(() => {
+  if (!isAuthenticated) return;
+
+  refreshDbStatus();
+  fetchAdminData();
+
+  const interval = setInterval(() => {
+    fetchAdminData();
+    refreshDbStatus();
+  }, 10000); // refresh DB status every 10s
+
+  return () => clearInterval(interval);
+}, [isAuthenticated, refreshDbStatus]);
+
 
   const fetchAdminData = async () => {
       setLoading(true);
@@ -194,7 +205,8 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
            ) : (
                <div className="max-w-6xl mx-auto space-y-10">
                    {/* Local Storage Warning Banner */}
-                   {!dbStatus?.isConnected && (
+                   {dbStatus && !dbStatus.isConnected && (
+
                        <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
                            <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
                                <WifiOff className="w-6 h-6" />
