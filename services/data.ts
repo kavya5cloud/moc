@@ -153,6 +153,7 @@ const syncDelete = async (
 /* ================================
    API
 ================================ */
+
 export const getExhibitions = () =>
   syncGet<Exhibition[]>('exhibitions', STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS);
 
@@ -179,6 +180,38 @@ export const getBookings = () =>
 
 export const saveBooking = (b: Booking) =>
   syncUpsert('bookings', STORAGE_KEYS.BOOKINGS, b);
+
+export const updateOrderStatus = async (
+  orderId: string,
+  status: 'Pending' | 'Fulfilled'
+) => {
+  const orders = getLocal<any[]>('MOCA_ORDERS', []);
+  const index = orders.findIndex(o => o.id === orderId);
+
+  if (index !== -1) {
+    orders[index] = {
+      ...orders[index],
+      status,
+    };
+    setLocal('MOCA_ORDERS', orders);
+  }
+
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .from('shop_orders')
+        .update({ status })
+        .eq('id', orderId);
+
+      if (error) {
+        console.error('[DB WRITE] shop_orders', error);
+      }
+    } catch (err) {
+      console.error('[NETWORK WRITE] shop_orders', err);
+    }
+  }
+};
+
 
 export const getShopOrders = () =>
   syncGet<ShopOrder[]>('shop_orders', STORAGE_KEYS.ORDERS, []);
@@ -209,3 +242,8 @@ export const savePageAssets = async (data: PageAssets) =>
 
 export const getStaffMode = async () =>
   localStorage.getItem('MOCA_STAFF_MODE') === 'true';
+
+export const getHomepageGallery = async () => {
+  return getLocal<any[]>('MOCA_GALLERY_SCROLL', []);
+};
+
