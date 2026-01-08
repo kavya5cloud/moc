@@ -1,46 +1,19 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import {
-  Collectable,
-  ShopOrder,
-  Booking,
-  PageAssets,
-  Exhibition,
-  Artwork,
-  Event,
-  Review,
-} from '../types';
-import {
-  COLLECTABLES,
-  DEFAULT_ASSETS,
-  EXHIBITIONS,
-  ARTWORKS,
-} from '../constants';
-
-/**
- * MOCA HYBRID DATA ENGINE (FINAL)
- * Server: Supabase Cloud
- * Mirror: Browser LocalStorage
- */
 
 /* ================================
-   ENV
+   ENV (VITE ONLY)
 ================================ */
-const SUPABASE_URL = 'https://wfympkifjwdinxpiagbw.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!SUPABASE_ANON_KEY) {
-  console.warn('[MOCA] Supabase ANON key missing – Local Mirror fallback');
-} else {
-  console.log('[MOCA] Supabase env detected – LIVE CLOUD');
-}
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 /* ================================
-   SUPABASE CLIENT (AUTHORITATIVE)
+   SUPABASE CLIENT
 ================================ */
 export const supabase: SupabaseClient | null =
-  SUPABASE_ANON_KEY
+  SUPABASE_URL && SUPABASE_ANON_KEY
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
+
 
 /* ================================
    STORAGE KEYS
@@ -77,9 +50,10 @@ const setLocal = (key: string, data: any) => {
 export const checkDatabaseConnection = () => ({
   isConnected: !!supabase,
   mode: supabase ? 'LIVE CLOUD' : 'LOCAL MIRROR',
-  url: supabase ? SUPABASE_URL : 'NOT_CONFIGURED',
+  url: supabase ? 'CONNECTED' : 'NOT_CONFIGURED',
   timestamp: Date.now(),
 });
+
 
 /* ================================
    INITIAL BOOTSTRAP
