@@ -199,14 +199,26 @@ export const getDashboardAnalytics = async () => {
     getBookings(),
   ]);
 
+  const shopRevenue = orders.reduce((s, o) => s + o.totalAmount, 0);
+  const ticketRevenue = bookings.reduce((s, b) => s + b.totalAmount, 0);
+  const totalTickets = bookings.reduce(
+    (s, b) => s + b.tickets.adult + b.tickets.student + b.tickets.child,
+    0
+  );
+
   return {
-    totalRevenue:
-      orders.reduce((s, o) => s + o.totalAmount, 0) +
-      bookings.reduce((s, b) => s + b.totalAmount, 0),
+    totalRevenue: shopRevenue + ticketRevenue,
+    shopRevenue,
+    ticketRevenue,
+    totalTickets,
     orderCount: orders.length,
     bookingCount: bookings.length,
+    recentActivity: [...orders, ...bookings]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 10),
   };
 };
+
 
 export const getPageAssets = async (): Promise<PageAssets> =>
   getLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
