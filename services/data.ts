@@ -14,7 +14,11 @@ export const supabase: SupabaseClient | null =
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
-
+    
+console.log("Supabase init check:");
+console.log("VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL);
+console.log("VITE_SUPABASE_ANON_KEY:", import.meta.env.VITE_SUPABASE_ANON_KEY ? "present (hidden)" : "MISSING");
+console.log("supabase client:", supabase ? "CREATED" : "NULL - local mode active");
 /* ================================
    STORAGE KEYS
 ================================ */
@@ -80,16 +84,29 @@ const syncGet = async <T>(
   storageKey: string,
   fallback: T
 ): Promise<T> => {
+  // ⏱ timeout protection
+  const timeout = new Promise<null>((resolve) =>
+    setTimeout(() => resolve(null), 3000)
+  );
+
   if (supabase) {
-    const { data, error } = await supabase.from(table).select('*');
-    if (data) {
-      setLocal(storageKey, data);
-      return data as T;
+    try {
+      const query = supabase.from(table).select('*');
+      const result = await Promise.race([query, timeout]);
+
+      if (result && 'data' in result && result.data) {
+        setLocal(storageKey, result.data);
+        return result.data as T;
+      }
+    } catch (err) {
+      console.warn(`[SYNC FALLBACK] ${table}`, err);
     }
-    if (error) console.error(`[DB READ] ${table}`, error);
   }
+
+  // ✅ ALWAYS FALL BACK
   return getLocal(storageKey, fallback);
 };
+
 
 const syncUpsert = async (
   table: string,
