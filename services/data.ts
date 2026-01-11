@@ -1,10 +1,29 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-
+import {
+  COLLECTABLES,
+  EXHIBITIONS,
+  ARTWORKS,
+  DEFAULT_ASSETS,
+} from './mockData';
 /* ================================
    ENV (VITE ONLY)
 ================================ */
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+export const bootstrapMuseumData = async () => {
+  if (!localStorage.getItem(STORAGE_KEYS.COLLECTABLES))
+    setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES);
+
+  if (!localStorage.getItem(STORAGE_KEYS.EXHIBITIONS))
+    setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS);
+
+  if (!localStorage.getItem(STORAGE_KEYS.ARTWORKS))
+    setLocal(STORAGE_KEYS.ARTWORKS, ARTWORKS);
+
+  if (!localStorage.getItem(STORAGE_KEYS.PAGE_ASSETS))
+    setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
+};
 
 /* ================================
    SUPABASE CLIENT
@@ -14,7 +33,7 @@ export const supabase: SupabaseClient | null =
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
-    
+
 console.log("Supabase init check:");
 console.log("VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL);
 console.log("VITE_SUPABASE_ANON_KEY:", import.meta.env.VITE_SUPABASE_ANON_KEY ? "present (hidden)" : "MISSING");
