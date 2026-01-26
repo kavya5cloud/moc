@@ -46,9 +46,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setHomepageGallery(gal);
             setLoading(false);
         } catch (err) {
-            console.error("DataContext: Sync Error", err);
-        }
-    }, []);
+             console.error("DataContext: Sync Error", err);
+         } finally {
+             setLoading(false);
+         }
+     }, []);
 
     useEffect(() => {
         refresh();

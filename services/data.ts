@@ -13,16 +13,16 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | und
 
 export const bootstrapMuseumData = async () => {
   if (!localStorage.getItem(STORAGE_KEYS.COLLECTABLES))
-    setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES);
+    setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES, false);
 
   if (!localStorage.getItem(STORAGE_KEYS.EXHIBITIONS))
-    setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS);
+    setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS, false);
 
   if (!localStorage.getItem(STORAGE_KEYS.ARTWORKS))
-    setLocal(STORAGE_KEYS.ARTWORKS, ARTWORKS);
+    setLocal(STORAGE_KEYS.ARTWORKS, ARTWORKS, false);
 
   if (!localStorage.getItem(STORAGE_KEYS.PAGE_ASSETS))
-    setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
+    setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS, false);
 };
 
 /* ================================
@@ -60,11 +60,13 @@ const getLocal = <T>(key: string, fallback: T): T => {
   return data ? JSON.parse(data) : fallback;
 };
 
-const setLocal = (key: string, data: any) => {
+const setLocal = (key: string, data: any, dispatchEvent: boolean = true) => {
   localStorage.setItem(key, JSON.stringify(data));
-  window.dispatchEvent(
-    new CustomEvent('MOCA_DB_UPDATE', { detail: { store: key } })
-  );
+  if (dispatchEvent) {
+    window.dispatchEvent(
+      new CustomEvent('MOCA_DB_UPDATE', { detail: { store: key } })
+    );
+  }
 };
 
 /* ================================
@@ -83,16 +85,16 @@ export const checkDatabaseConnection = () => ({
 ================================ */
 export const bootstrapMuseumData = async () => {
   if (!localStorage.getItem(STORAGE_KEYS.COLLECTABLES))
-    setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES);
+    setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES, false);
 
   if (!localStorage.getItem(STORAGE_KEYS.EXHIBITIONS))
-    setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS);
+    setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS, false);
 
   if (!localStorage.getItem(STORAGE_KEYS.ARTWORKS))
-    setLocal(STORAGE_KEYS.ARTWORKS, ARTWORKS);
+    setLocal(STORAGE_KEYS.ARTWORKS, ARTWORKS, false);
 
   if (!localStorage.getItem(STORAGE_KEYS.PAGE_ASSETS))
-    setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
+    setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS, false);
 };
 
 /* ================================
@@ -114,7 +116,7 @@ const syncGet = async <T>(
       const result = await Promise.race([query, timeout]);
 
       if (result && 'data' in result && result.data) {
-        setLocal(storageKey, result.data);
+        setLocal(storageKey, result.data, false);
         return result.data as T;
       }
     } catch (err) {
@@ -203,7 +205,7 @@ export const updateOrderStatus = async (
       ...orders[index],
       status,
     };
-    setLocal('MOCA_ORDERS', orders);
+    setLocal('MOCA_ORDERS', orders, false);
   }
 
   if (supabase) {
@@ -260,7 +262,7 @@ export const getPageAssets = async (): Promise<PageAssets> =>
   getLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
 
 export const savePageAssets = async (data: PageAssets) =>
-  setLocal(STORAGE_KEYS.PAGE_ASSETS, data);
+  setLocal(STORAGE_KEYS.PAGE_ASSETS, data, false);
 
 export const getStaffMode = async () =>
   localStorage.getItem('MOCA_STAFF_MODE') === 'true';
