@@ -141,8 +141,16 @@ const syncUpsert = async (
   setLocal(storageKey, list);
 
   if (supabase) {
-    const { error } = await supabase.from(table).upsert(item);
-    if (error) console.error(`[DB WRITE] ${table}`, error);
+    try {
+      const { error } = await supabase.from(table).upsert(item);
+      if (error) {
+        console.error(`[DB WRITE] ${table}`, error);
+        // Optional: Revert local change if Supabase write fails, or add a rollback mechanism
+      }
+    } catch (err) {
+      console.error(`[NETWORK WRITE] ${table}`, err);
+      // Optional: Handle network errors, perhaps show a toast to the user
+    }
   }
 };
 
@@ -157,8 +165,16 @@ const syncDelete = async (
   );
 
   if (supabase) {
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) console.error(`[DB DELETE] ${table}`, error);
+    try {
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) {
+        console.error(`[DB DELETE] ${table}`, error);
+        // Optional: Revert local change if Supabase delete fails
+      }
+    } catch (err) {
+      console.error(`[NETWORK DELETE] ${table}`, err);
+      // Optional: Handle network errors
+    }
   }
 };
 
