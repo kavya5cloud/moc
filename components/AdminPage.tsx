@@ -55,14 +55,20 @@ useEffect(() => {
 
   const fetchAdminData = async () => {
       setLoading(true);
-      const [stats, ord, bks, inv] = await Promise.all([
-          getDashboardAnalytics(), getShopOrders(), getBookings(), getCollectables()
-      ]);
-      setAnalytics(stats);
-      setOrders(ord);
-      setBookings(bks);
-      setInventory(inv);
-      setLoading(false);
+      try {
+          const [stats, ord, bks, inv] = await Promise.all([
+              getDashboardAnalytics(), getShopOrders(), getBookings(), getCollectables()
+          ]);
+          setAnalytics(stats);
+          setOrders(ord);
+          setBookings(bks);
+          setInventory(inv);
+      } catch (error) {
+          console.error("Failed to fetch admin data:", error);
+          // Optionally, show an error message to the user
+      } finally {
+          setLoading(false);
+      }
   };
 
   const handleLogin = (e: React.FormEvent) => {

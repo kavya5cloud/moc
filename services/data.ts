@@ -1,5 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import {
+  Collectable,
+  Exhibition,
+  Artwork,
+  Event,
+  Booking,
+  ShopOrder,
+  PageAssets,
+} from '../types';
+import {
   COLLECTABLES,
   EXHIBITIONS,
   ARTWORKS,
@@ -10,20 +19,6 @@ import {
 ================================ */
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-export const bootstrapMuseumData = async () => {
-  if (!localStorage.getItem(STORAGE_KEYS.COLLECTABLES))
-    setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES, false);
-
-  if (!localStorage.getItem(STORAGE_KEYS.EXHIBITIONS))
-    setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS, false);
-
-  if (!localStorage.getItem(STORAGE_KEYS.ARTWORKS))
-    setLocal(STORAGE_KEYS.ARTWORKS, ARTWORKS, false);
-
-  if (!localStorage.getItem(STORAGE_KEYS.PAGE_ASSETS))
-    setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS, false);
-};
 
 /* ================================
    SUPABASE CLIENT
@@ -135,7 +130,8 @@ const syncUpsert = async (
   item: any,
   idField = 'id'
 ) => {
-  const list = getLocal<any[]>(storageKey, []);
+  const originalList = getLocal<any[]>(storageKey, []);
+  const list = [...originalList];
   const index = list.findIndex((i) => i[idField] === item[idField]);
   index > -1 ? (list[index] = item) : list.unshift(item);
   setLocal(storageKey, list);
@@ -145,11 +141,15 @@ const syncUpsert = async (
       const { error } = await supabase.from(table).upsert(item);
       if (error) {
         console.error(`[DB WRITE] ${table}`, error);
-        // Optional: Revert local change if Supabase write fails, or add a rollback mechanism
+        setLocal(storageKey, originalList); // Rollback local state
+        // TODO: Show a toast or other user feedback for DB write failure
       }
     } catch (err) {
       console.error(`[NETWORK WRITE] ${table}`, err);
-      // Optional: Handle network errors, perhaps show a toast to the user
+      setLocal(storageKey, originalList); // Rollback local state
+      // TODO: Show a toast or other user feedback for network error
+    } finally {
+      // Ensure loading states are cleared if implemented in UI
     }
   }
 };
@@ -159,9 +159,10 @@ const syncDelete = async (
   storageKey: string,
   id: string
 ) => {
+  const originalList = getLocal<any[]>(storageKey, []);
   setLocal(
     storageKey,
-    getLocal<any[]>(storageKey, []).filter((i) => i.id !== id)
+    originalList.filter((i) => i.id !== id)
   );
 
   if (supabase) {
@@ -169,11 +170,15 @@ const syncDelete = async (
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) {
         console.error(`[DB DELETE] ${table}`, error);
-        // Optional: Revert local change if Supabase delete fails
+        setLocal(storageKey, originalList); // Rollback local state
+        // TODO: Show a toast or other user feedback for DB delete failure
       }
     } catch (err) {
       console.error(`[NETWORK DELETE] ${table}`, err);
-      // Optional: Handle network errors
+      setLocal(storageKey, originalList); // Rollback local state
+      // TODO: Show a toast or other user feedback for network error
+    } finally {
+      // Ensure loading states are cleared if implemented in UI
     }
   }
 };
@@ -213,30 +218,12 @@ export const updateOrderStatus = async (
   orderId: string,
   status: 'Pending' | 'Fulfilled'
 ) => {
-  const orders = getLocal<any[]>('MOCA_ORDERS', []);
-  const index = orders.findIndex(o => o.id === orderId);
+  const orders = getLocal<any[]>(STORAGE_KEYS.ORDERS, []);
+  const orderToUpdate = orders.find(o => o.id === orderId);
 
-  if (index !== -1) {
-    orders[index] = {
-      ...orders[index],
-      status,
-    };
-    setLocal('MOCA_ORDERS', orders, false);
-  }
-
-  if (supabase) {
-    try {
-      const { error } = await supabase
-        .from('shop_orders')
-        .update({ status })
-        .eq('id', orderId);
-
-      if (error) {
-        console.error('[DB WRITE] shop_orders', error);
-      }
-    } catch (err) {
-      console.error('[NETWORK WRITE] shop_orders', err);
-    }
+  if (orderToUpdate) {
+    const updatedOrder = { ...orderToUpdate, status };
+    await syncUpsert('shop_orders', STORAGE_KEYS.ORDERS, updatedOrder);
   }
 };
 
