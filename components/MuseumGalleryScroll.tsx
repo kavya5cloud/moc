@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { getHomepageGallery } from '../services/data';
+import { GalleryImage } from '../types';
 
 interface Track {
   speed: number;
@@ -61,21 +62,22 @@ const MuseumGalleryScroll: React.FC = () => {
             }}
           >
             {/* Repeat images for overflow */}
-            {[...track.images, ...track.images, ...track.images].map((src, imgIdx) => (
+            {[...track.images, ...track.images, ...track.images].map((image, imgIdx) => (
               <div 
                 key={imgIdx} 
                 className="inline-block shrink-0 relative group"
               >
                 <div className="h-[300px] md:h-[500px] aspect-[4/5] bg-gray-100 overflow-hidden relative">
                     <img 
-                      src={src} 
-                      alt={`Perspective of MOCA Architecture ${imgIdx + 1}`} 
+                      src={image.imageUrl} 
+                      alt={image.title} 
                       loading="lazy"
                       onError={handleImageError}
                       className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 transition-all duration-1000 ease-in-out cursor-crosshair border border-black/5"
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                        <span className="text-white text-[10px] font-bold uppercase tracking-widest border border-white px-3 py-1.5">Curated Stillness</span>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
+                        <h4 className="text-white text-lg font-bold mb-2">{image.title}</h4>
+                        <p className="text-white text-sm opacity-80">{image.description}</p>
                     </div>
                 </div>
               </div>

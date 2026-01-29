@@ -7,14 +7,15 @@ import {
     Tag, Activity, Globe, ShieldCheck, AlertCircle, Copy, Terminal,
     Upload, Image as ImageIcon, Link as LinkIcon, Info, WifiOff
 } from 'lucide-react';
-import { 
+import {
     getCollectables, deleteCollectable, saveCollectable,
     getBookings, getShopOrders, updateOrderStatus,
-    getDashboardAnalytics, checkDatabaseConnection
+    getDashboardAnalytics, checkDatabaseConnection,
+    getGalleryImages, saveGalleryImage, deleteGalleryImage
 } from '../services/data';
-import { Collectable, Booking, ShopOrder } from '../types';
+import { Collectable, Booking, ShopOrder, GalleryImage } from '../types';
 
-type Tab = 'analytics' | 'orders' | 'bookings' | 'inventory' | 'system';
+type Tab = 'analytics' | 'orders' | 'bookings' | 'inventory' | 'system' | 'gallery';
 
 const AdminPage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,11 +26,13 @@ const AdminPage: React.FC = () => {
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [inventory, setInventory] = useState<Collectable[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [dbStatus, setDbStatus] = useState<any>(null);
   
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [editItem, setEditItem] = useState<any>(null);
+  const [editItem, setEditItem] = useState<any>(null); // Can be Collectable or GalleryImage
+  const [editGalleryImage, setEditGalleryImage] = useState<GalleryImage | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
@@ -56,13 +59,14 @@ useEffect(() => {
   const fetchAdminData = async () => {
       setLoading(true);
       try {
-          const [stats, ord, bks, inv] = await Promise.all([
-              getDashboardAnalytics(), getShopOrders(), getBookings(), getCollectables()
+          const [stats, ord, bks, inv, gallery] = await Promise.all([
+              getDashboardAnalytics(), getShopOrders(), getBookings(), getCollectables(), getGalleryImages()
           ]);
           setAnalytics(stats);
           setOrders(ord);
           setBookings(bks);
           setInventory(inv);
+          setGalleryImages(gallery);
       } catch (error) {
           console.error("Failed to fetch admin data:", error);
           // Optionally, show an error message to the user
@@ -95,6 +99,22 @@ useEffect(() => {
       setIsSyncing(true);
       await saveCollectable(editItem);
       setEditItem(null);
+      fetchAdminData();
+      setIsSyncing(false);
+  };
+
+  const handleSaveGalleryImage = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSyncing(true);
+      await saveGalleryImage(editGalleryImage as GalleryImage);
+      setEditGalleryImage(null);
+      fetchAdminData();
+      setIsSyncing(false);
+  };
+
+  const handleDeleteGalleryImage = async (id: string) => {
+      setIsSyncing(true);
+      await deleteGalleryImage(id);
       fetchAdminData();
       setIsSyncing(false);
   };
@@ -181,6 +201,7 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                    { id: 'orders', icon: ShoppingBag, label: 'Shop Orders' },
                    { id: 'bookings', icon: Calendar, label: 'Ticket Registry' },
                    { id: 'inventory', icon: Tag, label: 'Products' },
+                   { id: 'gallery', icon: ImageIcon, label: 'Gallery' },
                    { id: 'system', icon: Database, label: 'System' },
                ].map(item => (
                    <button 
@@ -421,6 +442,34 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                            ))}
                        </div>
                    )}
+
+                   {activeTab === 'gallery' && (
+                       <div className="space-y-8">
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                               {galleryImages.map(image => (
+                                   <div key={image.id} className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-sm group">
+                                       <div className="h-48 bg-gray-50 relative overflow-hidden">
+                                           <img src={image.imageUrl} alt={image.title} className="w-full h-full object-cover mix-blend-multiply group-hover:scale-110 transition-transform duration-700" />
+                                           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                               Gallery
+                                           </div>
+                                       </div>
+                                       <div className="p-6">
+                                           <h4 className="font-bold text-lg mb-1">{image.title}</h4>
+                                           <p className="text-sm text-gray-400">{image.description}</p>
+                                           <div className="flex gap-2 mt-4">
+                                               <button onClick={() => setEditGalleryImage(image)} className="flex-grow bg-gray-50 py-3 rounded-xl text-xs font-black uppercase hover:bg-black hover:text-white transition-all">Edit</button>
+                                               <button onClick={() => handleDeleteGalleryImage(image.id)} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash className="w-4 h-4" /></button>
+                                           </div>
+                                       </div>
+                                   </div>
+                               ))}
+                           </div>
+                           <button onClick={() => setEditGalleryImage({ id: `gallery-${Date.now()}`, imageUrl: '', title: '', description: '' })} className="bg-black text-white px-5 py-2.5 rounded-lg text-xs font-black uppercase flex items-center gap-2 hover:bg-gray-800">
+                               <Plus className="w-4 h-4" /> Add Gallery Image
+                           </button>
+                       </div>
+                   )}
                </div>
            )}
        </main>
@@ -509,6 +558,53 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                        
                        <button type="submit" disabled={isSyncing} className="w-full bg-black text-white py-5 rounded-xl font-black uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 shadow-xl">
                            {isSyncing ? <RefreshCw className="animate-spin w-5 h-5" /> : <Check className="w-5 h-5" />} Save Product
+                       </button>
+                   </form>
+               </div>
+           </div>
+       )}
+
+       {editGalleryImage && (
+           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-6 overflow-y-auto">
+               <div className="bg-white max-w-lg w-full rounded-[2.5rem] p-10 md:p-12 animate-in zoom-in-95 duration-300 my-8">
+                   <div className="flex justify-between items-center mb-10">
+                       <h3 className="text-2xl font-black uppercase tracking-tighter">Gallery Image Setup</h3>
+                       <button onClick={() => setEditGalleryImage(null)} className="p-2 hover:bg-gray-100 rounded-full"><X className="w-6 h-6" /></button>
+                   </div>
+                   <form onSubmit={handleSaveGalleryImage} className="space-y-8">
+                       {/* Image URL */}
+                       <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Image URL</label>
+                           <input 
+                               required 
+                               className="w-full border-2 border-gray-100 p-4 rounded-xl font-bold outline-none focus:border-black"
+                               value={editGalleryImage.imageUrl}
+                               onChange={e => setEditGalleryImage({...editGalleryImage, imageUrl: e.target.value})}
+                           />
+                       </div>
+                       {/* Title */}
+                       <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Title</label>
+                           <input 
+                               required 
+                               className="w-full border-2 border-gray-100 p-4 rounded-xl font-bold outline-none focus:border-black"
+                               value={editGalleryImage.title}
+                               onChange={e => setEditGalleryImage({...editGalleryImage, title: e.target.value})}
+                           />
+                       </div>
+                       {/* Description */}
+                       <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Description</label>
+                           <textarea 
+                               required 
+                               className="w-full border-2 border-gray-100 p-4 rounded-xl font-bold outline-none focus:border-black min-h-[100px]"
+                               value={editGalleryImage.description}
+                               onChange={e => setEditGalleryImage({...editGalleryImage, description: e.target.value})}
+                           />
+                       </div>
+                       
+                       <button type="submit" disabled={isSyncing} className="w-full bg-black text-white py-5 rounded-xl font-black uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 shadow-xl">
+                           {isSyncing ? <RefreshCw className="animate-spin w-5 h-5" /> : <Check className="w-5 h-5" />} Save Gallery Image
                        </button>
                    </form>
                </div>

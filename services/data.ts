@@ -46,6 +46,7 @@ const STORAGE_KEYS = {
   PAGE_ASSETS: 'MOCA_ASSETS',
   BOOKINGS: 'MOCA_BOOKINGS',
   ORDERS: 'MOCA_ORDERS',
+  GALLERY_IMAGES: 'MOCA_GALLERY_IMAGES',
 };
 
 /* ================================
@@ -75,7 +76,6 @@ export const checkDatabaseConnection = () => ({
   timestamp: Date.now(),
 });
 
-
 /* ================================
    INITIAL BOOTSTRAP
 ================================ */
@@ -91,6 +91,10 @@ export const bootstrapMuseumData = async () => {
 
   if (!localStorage.getItem(STORAGE_KEYS.PAGE_ASSETS))
     setLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS, false);
+
+  // Initialize gallery images if not present
+  if (!localStorage.getItem(STORAGE_KEYS.GALLERY_IMAGES))
+    setLocal(STORAGE_KEYS.GALLERY_IMAGES, [], false);
 };
 
 /* ================================
@@ -123,7 +127,6 @@ const syncGet = async <T>(
   // ✅ ALWAYS FALL BACK
   return getLocal(storageKey, fallback);
 };
-
 
 const syncUpsert = async (
   table: string,
@@ -228,7 +231,6 @@ export const updateOrderStatus = async (
   }
 };
 
-
 export const getShopOrders = () =>
   syncGet<ShopOrder[]>('shop_orders', STORAGE_KEYS.ORDERS, []);
 
@@ -261,7 +263,6 @@ export const getDashboardAnalytics = async () => {
   };
 };
 
-
 export const getPageAssets = async (): Promise<PageAssets> =>
   getLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
 
@@ -271,7 +272,30 @@ export const savePageAssets = async (data: PageAssets) =>
 export const getStaffMode = async () =>
   localStorage.getItem('MOCA_STAFF_MODE') === 'true';
 
+export const getGalleryImages = () =>
+  syncGet<GalleryImage[]>('gallery_images', STORAGE_KEYS.GALLERY_IMAGES, []);
+
+export const saveGalleryImage = (image: GalleryImage) =>
+  syncUpsert('gallery_images', STORAGE_KEYS.GALLERY_IMAGES, image);
+
+export const deleteGalleryImage = (id: string) =>
+  syncDelete('gallery_images', STORAGE_KEYS.GALLERY_IMAGES, id);
+
 export const getHomepageGallery = async () => {
-  return getLocal<any[]>('MOCA_GALLERY_SCROLL', []);
+  const galleryImages = await getGalleryImages();
+
+  // Group images into tracks (example logic, adjust as needed)
+  // For simplicity, let's create 3 tracks and distribute images evenly
+  const tracks: { speed: number; direction: number; images: GalleryImage[] }[] = [
+    { speed: 0.05, direction: 1, images: [] },
+    { speed: 0.03, direction: -1, images: [] },
+    { speed: 0.07, direction: 1, images: [] },
+  ];
+
+  galleryImages.forEach((image, index) => {
+    tracks[index % tracks.length].images.push(image);
+  });
+
+  return tracks;
 };
 
