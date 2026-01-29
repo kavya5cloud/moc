@@ -97,6 +97,7 @@ useEffect(() => {
   const handleSaveProduct = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsSyncing(true);
+      console.log("Saving product:", editItem);
       await saveCollectable(editItem);
       setEditItem(null);
       fetchAdminData();
