@@ -263,8 +263,11 @@ export const getDashboardAnalytics = async () => {
   };
 };
 
-export const getPageAssets = async (): Promise<PageAssets> =>
-  getLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
+export const getPageAssets = async (): Promise<PageAssets> => {
+  const assets = getLocal(STORAGE_KEYS.PAGE_ASSETS, DEFAULT_ASSETS);
+  console.log("getPageAssets returning:", assets);
+  return assets;
+};
 
 export const savePageAssets = async (data: PageAssets) =>
   setLocal(STORAGE_KEYS.PAGE_ASSETS, data, false);
