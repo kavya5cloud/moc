@@ -11,6 +11,7 @@ import BookingPage from './components/BookingPage';
 import CollectablesPage from './components/CollectablesPage';
 import OrderStatusPage from './components/OrderStatusPage';
 import AdminPage from './components/AdminPage';
+import MuseumGalleryScroll from './components/MuseumGalleryScroll';
 import CuratorChat from './components/CuratorChat';
 import { DataProvider } from './services/DataContext';
 
@@ -28,6 +29,7 @@ const HomePage = () => (
     <div id="main-content" className="relative z-10 bg-white">
       <ShopHighlights />
       <VisitInfo />
+      <MuseumGalleryScroll />
     </div>
   </>
 );
