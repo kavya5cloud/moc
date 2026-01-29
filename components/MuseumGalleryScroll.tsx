@@ -5,7 +5,7 @@ import { getHomepageGallery } from '../services/data';
 interface Track {
   speed: number;
   direction: number;
-  images: string[];
+  images: GalleryImage[];
 }
 
 const MuseumGalleryScroll: React.FC = () => {

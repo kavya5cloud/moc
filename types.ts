@@ -85,6 +85,13 @@ export interface TeamMember {
   imageUrl: string;
 }
 
+export interface GalleryImage {
+  id: string;
+  imageUrl: string;
+  title: string;
+  description: string;
+}
+
 export interface PageAssets {
   about: {
     hero: string;

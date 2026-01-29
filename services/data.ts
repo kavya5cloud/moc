@@ -7,6 +7,7 @@ import {
   Booking,
   ShopOrder,
   PageAssets,
+  GalleryImage,
 } from '../types';
 import {
   COLLECTABLES,
