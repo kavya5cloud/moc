@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import './index.css'; // Import Tailwind CSS
+import './src/index.css'; // Import Tailwind CSS
 import { bootstrapMuseumData } from './services/data';
 
 const rootElement = document.getElementById('root');
@@ -19,9 +19,7 @@ const startApp = async () => {
         
         const root = ReactDOM.createRoot(rootElement);
         root.render(
-          <React.StrictMode>
             <App />
-          </React.StrictMode>
         );
     } catch (e) {
         console.error("BOOT: Critical Persistence Error", e);
