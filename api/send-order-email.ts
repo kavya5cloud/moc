@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: 'MOCA Gandhinagar <onboarding@resend.dev>', // Replace with your verified domain in Resend
+      from: 'MOCA Gandhinagar <noreply@mocagandhinagar.org>', // Using your verified domain
       to: [order.email],
       subject: `Your MOCA Gandhinagar Order Confirmation #${order.id}`,
       html: emailContent,
