@@ -80,8 +80,14 @@ export const checkDatabaseConnection = () => ({
    INITIAL BOOTSTRAP
 ================================ */
 export const bootstrapMuseumData = async () => {
-  if (!localStorage.getItem(STORAGE_KEYS.COLLECTABLES))
+  // Only initialize collectables if Supabase is not connected (fallback mode)
+  // Otherwise, products should only come from Supabase/admin panel
+  if (!supabase && !localStorage.getItem(STORAGE_KEYS.COLLECTABLES)) {
     setLocal(STORAGE_KEYS.COLLECTABLES, COLLECTABLES, false);
+  } else if (supabase && !localStorage.getItem(STORAGE_KEYS.COLLECTABLES)) {
+    // Initialize with empty array if Supabase is connected - products will come from Supabase
+    setLocal(STORAGE_KEYS.COLLECTABLES, [], false);
+  }
 
   if (!localStorage.getItem(STORAGE_KEYS.EXHIBITIONS))
     setLocal(STORAGE_KEYS.EXHIBITIONS, EXHIBITIONS, false);
@@ -200,8 +206,12 @@ export const saveExhibition = (ex: Exhibition) =>
 export const getArtworks = () =>
   syncGet<Artwork[]>('artworks', STORAGE_KEYS.ARTWORKS, ARTWORKS);
 
-export const getCollectables = () =>
-  syncGet<Collectable[]>('collectables', STORAGE_KEYS.COLLECTABLES, COLLECTABLES);
+export const getCollectables = () => {
+  // If Supabase is connected, use empty array as fallback (products should come from Supabase)
+  // Otherwise, use hardcoded COLLECTABLES as fallback
+  const fallback = supabase ? [] : COLLECTABLES;
+  return syncGet<Collectable[]>('collectables', STORAGE_KEYS.COLLECTABLES, fallback);
+};
 
 export const saveCollectable = (c: Collectable) =>
   syncUpsert('collectables', STORAGE_KEYS.COLLECTABLES, c);

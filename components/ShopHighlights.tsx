@@ -12,12 +12,20 @@ const ShopHighlights: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
         const allItems = await getCollectables();
+        // Only show products that are actually in stock and exist
+        // Filter out any hardcoded fallback products if you want to only show Supabase products
+        const validItems = allItems.filter(item => item.inStock !== false);
         // Grab items 0, 2, and 5 for variety if available, else just first 3
-        const showcase = allItems.length > 5 ? [allItems[0], allItems[2], allItems[5]] : allItems.slice(0, 3);
+        const showcase = validItems.length > 5 ? [validItems[0], validItems[2], validItems[5]] : validItems.slice(0, 3);
         setItems(showcase);
     };
     fetchData();
   }, []);
+
+  // Don't render the section if there are no items to display
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-24 bg-white border-t border-black/5">
