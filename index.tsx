@@ -2,7 +2,7 @@
 import React, { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import './src/index.css'; // Import Tailwind CSS
+import './index.css'; // Import Tailwind CSS
 import { bootstrapMuseumData } from './services/data';
 
 const rootElement = document.getElementById('root');
