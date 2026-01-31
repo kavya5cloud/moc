@@ -7,7 +7,7 @@ import {
     Tag, Activity, Globe, ShieldCheck, AlertCircle, Copy, Terminal,
     Upload, Image as ImageIcon, Link as LinkIcon, Info, WifiOff
 } from 'lucide-react';
-import {
+import { 
     getCollectables, deleteCollectable, saveCollectable,
     getBookings, getShopOrders, updateOrderStatus,
     getDashboardAnalytics, checkDatabaseConnection,
@@ -61,17 +61,17 @@ useEffect(() => {
       try {
           const [stats, ord, bks, inv, gallery] = await Promise.all([
               getDashboardAnalytics(), getShopOrders(), getBookings(), getCollectables(), getGalleryImages()
-          ]);
-          setAnalytics(stats);
-          setOrders(ord);
-          setBookings(bks);
-          setInventory(inv);
+      ]);
+      setAnalytics(stats);
+      setOrders(ord);
+      setBookings(bks);
+      setInventory(inv);
           setGalleryImages(gallery);
       } catch (error) {
           console.error("Failed to fetch admin data:", error);
           // Optionally, show an error message to the user
       } finally {
-          setLoading(false);
+      setLoading(false);
       }
   };
 
