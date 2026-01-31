@@ -17,7 +17,7 @@ import {
 import { COLLECTABLES } from '../constants';
 /* ================================
    ENV (VITE ONLY)
-================================ */
+================== */
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
@@ -234,8 +234,29 @@ export const updateOrderStatus = async (
 export const getShopOrders = () =>
   syncGet<ShopOrder[]>('shop_orders', STORAGE_KEYS.ORDERS, []);
 
-export const saveShopOrder = (o: ShopOrder) =>
-  syncUpsert('shop_orders', STORAGE_KEYS.ORDERS, o);
+export const saveShopOrder = async (o: ShopOrder) => {
+  await syncUpsert('shop_orders', STORAGE_KEYS.ORDERS, o);
+
+  // Attempt to send order confirmation email via serverless function
+  try {
+    const response = await fetch('/api/send-order-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order: o }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Failed to send order email:', errorData.message);
+    } else {
+      console.log('Order email triggered successfully!');
+    }
+  } catch (error) {
+    console.error('Error triggering order email:', error);
+  }
+};
 
 export const getDashboardAnalytics = async () => {
   const [orders, bookings] = await Promise.all([
