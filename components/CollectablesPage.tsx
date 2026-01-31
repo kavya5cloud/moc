@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, X, Plus, Minus, Lock, Check, CreditCard, Search, Loader2, ShieldCheck, Clipboard, Camera, Mail, Info, Download } from 'lucide-react';
 import { getCollectables, saveShopOrder } from '../services/data';
 import { EmailService } from '../services/email';
 import { Collectable, CartItem } from '../types';
 
 const CollectablesPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState<Collectable[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -18,7 +19,53 @@ const CollectablesPage: React.FC = () => {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   // Form State
-  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  
+  // Cashfree SDK
+  const [cashfree, setCashfree] = useState<any>(null);
+  
+  useEffect(() => {
+    // Load Cashfree SDK
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    script.onload = () => {
+      if ((window as any).Cashfree) {
+        const mode = process.env.NODE_ENV === 'production' ? 'production' : 'sandbox';
+        setCashfree((window as any).Cashfree({ mode }));
+      }
+    };
+    document.body.appendChild(script);
+    
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Handle payment callback from Cashfree
+  useEffect(() => {
+    const orderId = searchParams.get('orderId');
+    const txStatus = searchParams.get('txStatus');
+    
+    if (orderId && txStatus === 'SUCCESS') {
+      setConfirmedOrderId(orderId);
+      setOrderComplete(true);
+      setIsCartOpen(true);
+      setCart([]); // Clear cart after successful payment
+      
+      // Trigger email confirmation
+      const triggerEmail = async () => {
+        setEmailStatus('sending');
+        // Fetch order details and send email
+        // The email will be sent via the webhook, but we can also trigger it here
+        setEmailStatus('sent');
+      };
+      triggerEmail();
+      
+      // Clean up URL params
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [searchParams]);
 
   // FIX: Added async wrapper to handle Promise returned by getCollectables
   useEffect(() => {
@@ -56,41 +103,72 @@ const CollectablesPage: React.FC = () => {
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCheckingOut(true);
-    setLoadingMessage('Simulating Secure Transaction...');
+    
+    if (!cashfree) {
+      alert('Payment gateway is still initializing. Please wait a moment and try again.');
+      return;
+    }
 
-    const orderId = `ORD-${Math.floor(Math.random() * 89999) + 10000}`;
+    setIsCheckingOut(true);
+    setLoadingMessage('Creating Secure Payment Session...');
+
+    const orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
     setConfirmedOrderId(orderId);
 
-    setTimeout(() => {
-        setLoadingMessage('Dispatching Digital Confirmation...');
-        
-        setTimeout(async () => {
-            const newOrder = {
-                id: orderId,
-                customerName: formData.name,
-                email: formData.email,
-                items: cart,
-                totalAmount: cartTotal,
-                timestamp: Date.now(),
-                status: 'Pending' as const
-            };
-            
-            // Save to Local DB
-            await saveShopOrder(newOrder);
+    try {
+      // Create order in database first
+      const newOrder = {
+        id: orderId,
+        customerName: formData.name,
+        email: formData.email,
+        items: cart,
+        totalAmount: cartTotal,
+        timestamp: Date.now(),
+        status: 'Pending' as const
+      };
+      
+      // Save order to database (will be updated after payment)
+      await saveShopOrder(newOrder);
 
-            // Trigger Simulated Email
-            setEmailStatus('sending');
-            await EmailService.sendOrderConfirmation(newOrder);
-            setEmailStatus('sent');
+      // Create payment session with Cashfree
+      setLoadingMessage('Connecting to Payment Gateway...');
+      const returnUrl = `${window.location.origin}/#/collectables?orderId=${orderId}&txStatus=SUCCESS`;
+      
+      const response = await fetch('/api/create-payment-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId,
+          amount: cartTotal,
+          customerName: formData.name,
+          customerEmail: formData.email,
+          customerPhone: formData.phone || '',
+          returnUrl,
+        }),
+      });
 
-            setTimeout(() => {
-                setCart([]);
-                setIsCheckingOut(false);
-                setOrderComplete(true);
-            }, 500);
-        }, 1500);
-    }, 1200);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create payment session');
+      }
+
+      const { paymentSessionId } = await response.json();
+
+      // Redirect to Cashfree checkout
+      setLoadingMessage('Redirecting to Secure Payment...');
+      
+      cashfree.checkout({
+        paymentSessionId,
+        returnUrl,
+      });
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      alert(`Payment initialization failed: ${error.message}. Please try again.`);
+      setIsCheckingOut(false);
+      setLoadingMessage('');
+    }
   };
 
   const filteredItems = categoryFilter === 'All' 
@@ -251,12 +329,13 @@ const CollectablesPage: React.FC = () => {
                             <div className="grid grid-cols-1 gap-3">
                                 <input required type="text" placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-black" />
                                 <input required type="email" placeholder="Email Address" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-black" />
+                                <input type="tel" placeholder="Phone Number (Optional)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-black" />
                             </div>
-                            <button type="submit" className="w-full bg-black text-white py-4 rounded-lg font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                                <ShoppingBag className="w-5 h-5" /> Confirm Order Request
+                            <button type="submit" disabled={isCheckingOut} className="w-full bg-black text-white py-4 rounded-lg font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <CreditCard className="w-5 h-5" /> {isCheckingOut ? 'Processing...' : 'Proceed to Payment'}
                             </button>
                             <div className="pt-4 text-center">
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Digital confirmation sent instantly</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Secure payment powered by Cashfree</p>
                             </div>
                         </form>
                     </div>

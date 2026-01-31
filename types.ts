@@ -49,6 +49,10 @@ export interface ShopOrder {
   totalAmount: number;
   timestamp: number;
   status: 'Pending' | 'Fulfilled';
+  payment_status?: string;
+  payment_message?: string;
+  payment_time?: string;
+  payment_session_id?: string;
 }
 
 export interface ChatMessage {
