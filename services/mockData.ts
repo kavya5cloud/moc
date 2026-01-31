@@ -55,7 +55,7 @@ export const ARTWORKS: Artwork[] = [
     id: "art-001",
     title: "Urban Reflections",
     artist: "Anonymous Collective",
-    year: 2024,
+    year: "2024",
     medium: "Mixed Media",
     imageUrl: "https://images.unsplash.com/photo-1544961371-500e5a2d3142?w=800",
   },
@@ -63,14 +63,10 @@ export const ARTWORKS: Artwork[] = [
 ];
 
 export const DEFAULT_ASSETS: PageAssets = {
-  heroImage: "https://images.unsplash.com/photo-1580130718646-9f694209b207?w=1600",
-  aboutText: "MOCA Gandhinagar is a dynamic space dedicated to contemporary art, culture, and creative expression.",
-  welcomeMessage: "Welcome to the Museum of Contemporary Art",
-  curatorQuote: "Art is not what you see, but what you make others see.",
   visit: {
     hero: "https://images.unsplash.com/photo-1517487881513-cf6776b6b7a9?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     hours: "10:00 AM - 5:00 PM (Tues-Sun)",
-    locationText: "123 Museum St, Gandhinagar, Gujarat",
+    locationText: "Veer Residency, Gandhinagar Mahudi Highway, Gujarat, India",
     googleMapsLink: "https://maps.app.goo.gl/example",
     admissionInfo: "Adults: ₹200, Students: ₹100, Children: Free",
     parkingInfo: "Limited street parking and nearby paid lots.",
