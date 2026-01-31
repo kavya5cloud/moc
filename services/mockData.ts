@@ -1,35 +1,6 @@
 // src/services/mockData.ts
 import type { Collectable, Exhibition, Artwork, PageAssets } from '../types';
 
-export const COLLECTABLES: Collectable[] = [
-  {
-    id: "col-001",
-    name: "Minimalist Ceramic Vase",
-    price: 2499,
-    category: "Home",
-    imageUrl: "https://images.unsplash.com/photo-1578500491406-8a3d4e3e9e0e?w=800",
-    description: "Handcrafted ceramic vase with modern minimalist design",
-    inStock: true,
-  },
-  {
-    id: "col-002",
-    name: "Abstract Geometric Print",
-    price: 1299,
-    category: "Prints",
-    imageUrl: "https://images.unsplash.com/photo-1547891654-e66ed7eb9688?w=800",
-    description: "Limited edition abstract geometric art print",
-    inStock: true,
-  },
-  {
-    id: "col-003",
-    name: "Brass Bookend Set",
-    price: 1899,
-    category: "Accessories",
-    imageUrl: "https://images.unsplash.com/photo-1589829545856-d10d5f5a3f7f?w=800",
-    description: "Elegant brass bookends for your collection",
-    inStock: false,
-  },
-];
 
 export const EXHIBITIONS: Exhibition[] = [
   {

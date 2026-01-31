@@ -10,11 +10,11 @@ import {
   GalleryImage,
 } from '../types';
 import {
-  COLLECTABLES,
   EXHIBITIONS,
   ARTWORKS,
   DEFAULT_ASSETS,
 } from './mockData';
+import { COLLECTABLES } from '../constants';
 /* ================================
    ENV (VITE ONLY)
 ================================ */
