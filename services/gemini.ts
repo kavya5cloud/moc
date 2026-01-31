@@ -9,7 +9,7 @@ import { SYSTEM_INSTRUCTION } from "../constants";
 export const sendMessageToCurator = async (message: string, history: Array<{role: 'user' | 'model', text: string}>) => {
   // Ensure we have an API key. 
   // In the studio environment, process.env.API_KEY is automatically injected.
-  const apiKey = (process.env as any).API_KEY;
+  const apiKey = (process.env as any).GEMINI_API_KEY;
   
   if (!apiKey) {
     console.error("AI Curator: API_KEY is missing from environment variables.");
