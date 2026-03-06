@@ -188,15 +188,15 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] flex font-sans">
+    <div className="min-h-screen bg-[#FDFDFD] flex flex-col md:flex-row font-sans">
        {/* Sidebar */}
-       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0">
-           <div className="p-8 border-b border-gray-50">
+       <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-gray-100 flex flex-row md:flex-col md:h-screen md:sticky md:top-0">
+           <div className="p-4 md:p-8 border-r md:border-r-0 md:border-b border-gray-50 flex items-center justify-between md:block">
                <h1 className="text-xl font-black tracking-tighter">MOCA CORE</h1>
                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Management Hub</p>
            </div>
            
-           <nav className="flex-grow p-6 space-y-2">
+           <nav className="flex-grow p-2 md:p-6 flex md:block gap-2 overflow-x-auto">
                {[
                    { id: 'analytics', icon: TrendingUp, label: 'Analytics' },
                    { id: 'orders', icon: ShoppingBag, label: 'Shop Orders' },
@@ -208,10 +208,10 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                    <button 
                        key={item.id} 
                        onClick={() => setActiveTab(item.id as Tab)}
-                       className={`w-full flex items-center gap-4 p-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeTab === item.id ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}
+                       className={`flex-shrink-0 md:w-full flex items-center gap-3 md:gap-4 px-3 py-2 md:p-4 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all ${activeTab === item.id ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}
                    >
                        <item.icon className="w-4 h-4" />
-                       {item.label}
+                       <span className="whitespace-nowrap">{item.label}</span>
                    </button>
                ))}
            </nav>
@@ -224,7 +224,7 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
        </aside>
 
        {/* Main Content */}
-       <main className="flex-grow p-10 max-h-screen overflow-y-auto">
+       <main className="flex-grow p-4 md:p-10 md:max-h-screen overflow-y-auto">
            {loading && !analytics ? (
                <div className="h-full flex flex-col items-center justify-center animate-pulse">
                    <RefreshCw className="w-10 h-10 text-gray-200 animate-spin mb-4" />
@@ -255,7 +255,7 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                    )}
 
                    {/* Header Row */}
-                   <div className="flex justify-between items-end">
+                   <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-end">
                        <div>
                            <h2 className="text-4xl font-black tracking-tighter uppercase">{activeTab}</h2>
                            <p className="text-sm text-gray-400">Live operational data from the MOCA servers.</p>
@@ -377,7 +377,8 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
 
                    {activeTab === 'bookings' && (
                        <div className="bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden">
-                           <table className="w-full text-left">
+                           <div className="overflow-x-auto">
+                           <table className="w-full min-w-[700px] text-left">
                                <thead className="bg-gray-50 text-[10px] font-black uppercase text-gray-400">
                                    <tr>
                                        <th className="p-6">Booking ID</th>
@@ -430,12 +431,14 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                                    )}
                                </tbody>
                            </table>
+                           </div>
                        </div>
                    )}
 
                    {activeTab === 'orders' && (
                        <div className="bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden">
-                           <table className="w-full text-left">
+                           <div className="overflow-x-auto">
+                           <table className="w-full min-w-[600px] text-left">
                                <thead className="bg-gray-50 text-[10px] font-black uppercase text-gray-400">
                                    <tr>
                                        <th className="p-6">Order ID</th>
@@ -471,6 +474,7 @@ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY, itemId TEXT, itemType T
                                    ))}
                                </tbody>
                            </table>
+                           </div>
                        </div>
                    )}
 
