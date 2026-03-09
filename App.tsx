@@ -12,6 +12,8 @@ import CollectablesPage from './components/CollectablesPage';
 import OrderStatusPage from './components/OrderStatusPage';
 import AdminPage from './components/AdminPage';
 import PressPage from './components/PressPage';
+import GalleryPage from './components/GalleryPage';
+import VideoTestimonialsPage from './components/VideoTestimonialsPage';
 import MuseumGalleryScroll from './components/MuseumGalleryScroll';
 import CuratorChat from './components/CuratorChat';
 import { DataProvider } from './services/DataContext';
@@ -47,6 +49,8 @@ const Layout: React.FC = () => {
                   <Route path="/booking" element={<BookingPage />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/press" element={<PressPage />} />
+                  <Route path="/gallery" element={<GalleryPage />} />
+                  <Route path="/testimonies" element={<VideoTestimonialsPage />} />
               </Routes>
             </main>
             <Footer />
