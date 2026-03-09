@@ -339,8 +339,42 @@ export const getHomepageGallery = async () => {
   return tracks;
 };
 
-export const getPressReleases = () =>
-  syncGet<PressRelease[]>('press_releases', STORAGE_KEYS.PRESS_RELEASES, []);
+export const getPressReleases = async (): Promise<PressRelease[]> => {
+  const local = getLocal<PressRelease[]>(STORAGE_KEYS.PRESS_RELEASES, []);
+
+  // If no Supabase, always use local data
+  if (!supabase) {
+    return local;
+  }
+
+  // With Supabase, prefer cloud data when it exists,
+  // but don't wipe out local if the table is empty or missing.
+  try {
+    const timeout = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), 3000)
+    );
+    const query = supabase.from('press_releases').select('*');
+    const result: any = await Promise.race([query, timeout]);
+
+    if (!result || ('error' in result && result.error)) {
+      console.warn('[SYNC FALLBACK] press_releases', result?.error);
+      return local;
+    }
+
+    const data = (result.data as PressRelease[]) || [];
+
+    if (data.length === 0) {
+      // Keep existing local data as source of truth until cloud has rows
+      return local;
+    }
+
+    setLocal(STORAGE_KEYS.PRESS_RELEASES, data, false);
+    return data;
+  } catch (err) {
+    console.warn('[SYNC FALLBACK] press_releases', err);
+    return local;
+  }
+};
 
 // Press releases are often managed locally first; never rollback local
 // data if the Supabase table is missing or write fails.
