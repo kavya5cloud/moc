@@ -22,6 +22,12 @@ const Footer: React.FC = () => {
               <li><Link to="/shop" className="hover:text-black">MOCA Shop</Link></li>
               <li><Link to="/booking" className="hover:text-black">Book Tickets</Link></li>
               <li><Link to="/order-status" className="hover:text-black">Track Order</Link></li>
+              <li className="pt-2 border-t border-gray-200 mt-4">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2">Press &amp; Media</p>
+                <Link to="/press" className="hover:text-black text-sm">
+                  Press Releases
+                </Link>
+              </li>
             </ul>
           </div>
 
