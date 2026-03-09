@@ -101,7 +101,10 @@ export interface PressRelease {
   title: string;
   date: string;
   summary: string;
+  /** Can be an external URL or a data: URL for an uploaded PDF */
   url: string;
+  /** Optional original file name when a PDF is uploaded */
+  fileName?: string;
 }
 
 export interface PageAssets {

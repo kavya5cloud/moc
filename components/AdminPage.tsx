@@ -821,23 +821,58 @@ CREATE TABLE IF NOT EXISTS press_releases (id TEXT PRIMARY KEY, title TEXT, date
                                }
                            />
                        </div>
-                       <div className="space-y-2">
-                           <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
-                               Link to PDF or Article
-                           </label>
-                           <input
-                               type="url"
-                               required
-                               className="w-full border-2 border-gray-100 p-4 rounded-xl font-bold outline-none focus:border-black"
-                               placeholder="https://..."
-                               value={editPressRelease.url}
-                               onChange={(e) =>
-                                   setEditPressRelease({
-                                       ...(editPressRelease as PressRelease),
-                                       url: e.target.value,
-                                   })
-                               }
-                           />
+                       <div className="space-y-3">
+                           <div className="space-y-2">
+                               <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                                   Upload PDF (optional)
+                               </label>
+                               <input
+                                   type="file"
+                                   accept="application/pdf"
+                                   className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-black file:text-white hover:file:bg-gray-800"
+                                   onChange={(e) => {
+                                       const file = e.target.files?.[0];
+                                       if (!file) return;
+                                       if (file.type !== 'application/pdf') {
+                                           alert('Please upload a PDF file.');
+                                           return;
+                                       }
+                                       const reader = new FileReader();
+                                       reader.onload = (ev) => {
+                                           const dataUrl = ev.target?.result as string;
+                                           setEditPressRelease({
+                                               ...(editPressRelease as PressRelease),
+                                               url: dataUrl,
+                                               fileName: file.name,
+                                           });
+                                       };
+                                       reader.readAsDataURL(file);
+                                   }}
+                               />
+                               {editPressRelease.fileName && (
+                                   <p className="text-[11px] text-gray-500 ml-1">
+                                       Attached: {editPressRelease.fileName}
+                                   </p>
+                               )}
+                           </div>
+                           <div className="space-y-2">
+                               <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                                   Or link to PDF / article
+                               </label>
+                               <input
+                                   type="url"
+                                   className="w-full border-2 border-gray-100 p-4 rounded-xl font-bold outline-none focus:border-black"
+                                   placeholder="https://..."
+                                   value={editPressRelease.url}
+                                   onChange={(e) =>
+                                       setEditPressRelease({
+                                           ...(editPressRelease as PressRelease),
+                                           url: e.target.value,
+                                           fileName: e.target.value ? editPressRelease.fileName : undefined,
+                                       })
+                                   }
+                               />
+                           </div>
                        </div>
                        <button
                            type="submit"

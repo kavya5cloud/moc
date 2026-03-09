@@ -10,21 +10,32 @@ const PressPage: React.FC = () => {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      try {
-        const data = await getPressReleases();
-        if (mounted) {
-          setItems(
-            [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-            ),
-          );
-        }
-      } finally {
-        if (mounted) setLoading(false);
+
+    const load = async () => {
+      const data = await getPressReleases();
+      if (!mounted) return;
+      setItems(
+        [...data].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+      );
+      setLoading(false);
+    };
+
+    load();
+
+    const handler = (event: Event) => {
+      const custom = event as CustomEvent<{ store: string }>;
+      if (custom.detail?.store === 'MOCA_PRESS_RELEASES') {
+        load();
       }
-    })();
+    };
+
+    window.addEventListener('MOCA_DB_UPDATE', handler as EventListener);
+
     return () => {
       mounted = false;
+      window.removeEventListener('MOCA_DB_UPDATE', handler as EventListener);
     };
   }, []);
 
